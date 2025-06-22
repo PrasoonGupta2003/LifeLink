@@ -6,7 +6,7 @@ import io from "socket.io-client";
 import Swal from "sweetalert2";
 import { MdDelete } from "react-icons/md";
 
-// Setup socket outside component to avoid reconnecting on every render
+// ✅ Initialize socket outside the component
 const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:5000");
 
 function Chat() {
@@ -20,31 +20,34 @@ function Chat() {
   const token = user.token;
   const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
+  // 📥 Fetch old messages + join socket room
   useEffect(() => {
-  if (!user?._id || !receiverId) return;
+    if (!user?._id || !receiverId) return;
 
-  fetchMessages();
+    fetchMessages();
 
-  socket.emit("join", user._id);
+    socket.emit("join", user._id);
 
-  const handleReceiveMessage = (msg) => {
-    const getId = (val) => (typeof val === "object" ? val._id : val);
+    const handleNewMessage = (msg) => {
+      const getId = (val) => (typeof val === "object" ? val._id : val);
 
-    if (
-      (getId(msg.from) === user._id && getId(msg.to) === receiverId) ||
-      (getId(msg.from) === receiverId && getId(msg.to) === user._id)
-    ) {
-      setMessages((prev) => [...prev, msg]);
-    }
-  };
+      if (
+        (getId(msg.from) === user._id && getId(msg.to) === receiverId) ||
+        (getId(msg.from) === receiverId && getId(msg.to) === user._id)
+      ) {
+        setMessages((prev) => [...prev, msg]);
+      }
+    };
 
-  socket.on("receiveMessage", handleReceiveMessage);
+    // ✅ Correct event name must match backend
+    socket.on("newMessage", handleNewMessage);
 
-  return () => {
-    socket.off("receiveMessage", handleReceiveMessage);
-  };
-}, [receiverId, user?._id]);
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+    };
+  }, [receiverId, user?._id]);
 
+  // 🧾 Fetch previous messages
   const fetchMessages = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/messages/${receiverId}`, {
@@ -58,6 +61,7 @@ function Chat() {
     }
   };
 
+  // 📤 Send message
   const sendMessage = async () => {
     if (!text.trim()) return;
 
@@ -72,15 +76,15 @@ function Chat() {
         }
       );
 
-      socket.emit("sendMessage", res.data); // res.data has from and to populated
-
       setMessages((prev) => [...prev, res.data]);
+      socket.emit("sendMessage", res.data); // ✅ Emit with correct structure
       setText("");
     } catch (err) {
       console.error("❌ Send message error", err);
     }
   };
 
+  // 🗑️ Delete chat
   const deleteChat = async () => {
     const confirm = await Swal.fire({
       title: "Delete Chat?",
@@ -109,6 +113,7 @@ function Chat() {
     }
   };
 
+  // 🔻 Scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
