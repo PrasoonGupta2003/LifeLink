@@ -173,16 +173,17 @@ function MyRequests() {
                   </button>
                 )}
 
-                {req.status === "matched" && req.matchedWith && (
-                  <button
-                    onClick={() =>
-                      window.location.href = `/chat/${req.matchedWith._id}`
-                    }
-                    className="mt-2 px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
-                  >
-                    💬 Chat with {req.matchedWith.userName}
-                  </button>
-                )}
+                {req.status === "matched" && req.matchedTo && (
+                <button
+                  onClick={() =>
+                    window.location.href = `/chat/${req.matchedTo._id}`
+                  }
+                  className="mt-2 px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                >
+                  💬 Chat with {req.matchedTo.userName}
+                </button>
+              )}
+
               </div>
             ))}
           </div>
