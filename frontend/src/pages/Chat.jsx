@@ -62,27 +62,27 @@ function Chat() {
   };
 
   // 📤 Send message
-  const sendMessage = async () => {
-    if (!text.trim()) return;
+const sendMessage = async () => {
+  if (!text.trim()) return;
 
-    try {
-      const res = await axios.post(
-        `${BASE_URL}/api/messages`,
-        { to: receiverId, content: text },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/api/messages`,
+      { to: receiverId, content: text },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-      setMessages((prev) => [...prev, res.data]);
-      socket.emit("sendMessage", res.data); // ✅ Emit with correct structure
-      setText("");
-    } catch (err) {
-      console.error("❌ Send message error", err);
-    }
-  };
+    // ❌ Don't push message manually — socket will handle it
+    socket.emit("sendMessage", res.data); // Just emit
+    setText(""); // Clear input
+  } catch (err) {
+    console.error("❌ Send message error", err);
+  }
+};
 
   // 🗑️ Delete chat
   const deleteChat = async () => {
