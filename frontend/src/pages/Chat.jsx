@@ -70,10 +70,7 @@ function Chat() {
         }
       );
 
-      socket.emit("sendMessage", {
-        to: receiverId,
-        message: res.data,
-      });
+      socket.emit("sendMessage", res.data); // res.data has from and to populated
 
       setMessages((prev) => [...prev, res.data]);
       setText("");
