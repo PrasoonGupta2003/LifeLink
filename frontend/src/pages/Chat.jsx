@@ -6,9 +6,8 @@ import io from "socket.io-client";
 import Swal from "sweetalert2";
 import { MdDelete } from "react-icons/md";
 
+// Setup socket outside component to avoid reconnecting on every render
 const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:5000");
-
-// No changes needed in imports
 
 function Chat() {
   const { id } = useParams();
@@ -22,22 +21,27 @@ function Chat() {
   const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   useEffect(() => {
+    if (!user?._id || !receiverId) return;
+
     fetchMessages();
+
     socket.emit("join", user._id);
 
-    socket.on("newMessage", (msg) => {
+    const handleReceiveMessage = (msg) => {
       if (
-        (msg.from === user._id && msg.to === receiverId) ||
-        (msg.from === receiverId && msg.to === user._id)
+        (msg.from._id === user._id && msg.to._id === receiverId) ||
+        (msg.from._id === receiverId && msg.to._id === user._id)
       ) {
         setMessages((prev) => [...prev, msg]);
       }
-    });
+    };
+
+    socket.on("receiveMessage", handleReceiveMessage);
 
     return () => {
-      socket.off("newMessage");
+      socket.off("receiveMessage", handleReceiveMessage);
     };
-  }, [receiverId]);
+  }, [receiverId, user?._id]);
 
   const fetchMessages = async () => {
     try {
@@ -48,12 +52,13 @@ function Chat() {
       });
       setMessages(res.data);
     } catch (err) {
-      console.error("Failed to fetch messages", err);
+      console.error("❌ Failed to fetch messages", err);
     }
   };
 
   const sendMessage = async () => {
     if (!text.trim()) return;
+
     try {
       const res = await axios.post(
         `${BASE_URL}/api/messages`,
@@ -64,11 +69,16 @@ function Chat() {
           },
         }
       );
+
+      socket.emit("sendMessage", {
+        to: receiverId,
+        message: res.data,
+      });
+
       setMessages((prev) => [...prev, res.data]);
-      socket.emit("sendMessage", res.data);
       setText("");
     } catch (err) {
-      console.error("Send message error", err);
+      console.error("❌ Send message error", err);
     }
   };
 
@@ -94,7 +104,7 @@ function Chat() {
         setMessages([]);
         Swal.fire("Deleted!", "Chat has been deleted.", "success");
       } catch (err) {
-        console.error("Delete chat error", err);
+        console.error("❌ Delete chat error", err);
         Swal.fire("Error", "Failed to delete chat.", "error");
       }
     }
@@ -121,20 +131,23 @@ function Chat() {
 
       <div className="flex-1 overflow-y-auto space-y-2 px-1 sm:px-2 mb-3">
         {messages.map((msg, idx) => (
-        <div
-          key={idx}
-          className={`max-w-[80%] sm:max-w-[70%] p-2 rounded-xl text-sm break-words ${
-            msg.from === user._id
-              ? "bg-indigo-100 self-end text-right"
-              : "bg-gray-200 self-start"
-          }`}
-        >
-          <div>{msg.content}</div>
-          <div className="text-[10px] text-gray-500 mt-1">
-            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          <div
+            key={idx}
+            className={`max-w-[80%] sm:max-w-[70%] p-2 rounded-xl text-sm break-words ${
+              msg.from._id === user._id
+                ? "bg-indigo-100 self-end text-right"
+                : "bg-gray-200 self-start"
+            }`}
+          >
+            <div>{msg.content}</div>
+            <div className="text-[10px] text-gray-500 mt-1">
+              {new Date(msg.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
         <div ref={bottomRef}></div>
       </div>
 
@@ -157,3 +170,4 @@ function Chat() {
 }
 
 export default Chat;
+
