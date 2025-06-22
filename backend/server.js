@@ -14,46 +14,52 @@ const server = http.createServer(app);
 // Setup socket.io
 const io = new Server(server, {
   cors: {
-    origin: "https://lifelink-1-kip8.onrender.com", // ✅ Your frontend URL
+    origin: "https://lifelink-1-kip8.onrender.com", // ✅ Frontend URL
     methods: ["GET", "POST", "PUT"],
     credentials: true,
   },
 });
 
-// Track connected users
-const userSocketMap = {}; // userId => socketId
+// Track connected users with multiple sockets
+const userSocketMap = {}; // userId => Set(socketIds)
 
 io.on("connection", (socket) => {
   console.log("🔌 Socket connected:", socket.id);
 
   // When a user joins with their ID
   socket.on("join", (userId) => {
-    userSocketMap[userId] = socket.id;
+    if (!userSocketMap[userId]) {
+      userSocketMap[userId] = new Set();
+    }
+    userSocketMap[userId].add(socket.id);
     console.log(`👤 User ${userId} joined with socket ${socket.id}`);
   });
 
   // Send message from one user to another
   socket.on("sendMessage", (message) => {
-    const receiverSocketId = userSocketMap[message.to];
-    const senderSocketId = userSocketMap[message.from];
+    const receiverSockets = userSocketMap[message.to];
+    const senderSockets = userSocketMap[message.from];
 
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", message);
+    if (receiverSockets) {
+      receiverSockets.forEach((sockId) => {
+        io.to(sockId).emit("newMessage", message);
+      });
     }
 
-    // Optional: emit to sender as well to ensure UI sync
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("newMessage", message);
+    if (senderSockets) {
+      senderSockets.forEach((sockId) => {
+        io.to(sockId).emit("newMessage", message);
+      });
     }
   });
 
   // Cleanup on disconnect
   socket.on("disconnect", () => {
     console.log("❌ Socket disconnected:", socket.id);
-    for (const [userId, sockId] of Object.entries(userSocketMap)) {
-      if (sockId === socket.id) {
+    for (const [userId, sockets] of Object.entries(userSocketMap)) {
+      sockets.delete(socket.id);
+      if (sockets.size === 0) {
         delete userSocketMap[userId];
-        break;
       }
     }
   });
@@ -82,9 +88,12 @@ mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
-    server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    server.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT}`)
+    );
   })
   .catch((err) => {
     console.error("❌ DB connection error:", err);
   });
+
 
