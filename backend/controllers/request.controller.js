@@ -31,14 +31,17 @@ export const getAllRequests = async (req, res) => {
 // ✅ Get my own requests
 export const getMyRequests = async (req, res) => {
   try {
-    const myRequests = await Request.find({ createdBy: req.user._id }).sort({
-      createdAt: -1,
-    });
-    res.json(myRequests);
+    const requests = await Request.find({ createdBy: req.userId })
+      .populate("matchedWith", "userName email") // 🧠 Add this
+      .sort({ createdAt: -1 });
+
+    res.json(requests);
   } catch (err) {
-    res.status(500).json({ msg: "Failed to fetch my requests" });
+    console.error("Get My Requests Error:", err);
+    res.status(500).json({ msg: "Failed to get requests" });
   }
 };
+
 
 // ✅ Match a user to a request
 export const matchRequest = async (req, res) => {
