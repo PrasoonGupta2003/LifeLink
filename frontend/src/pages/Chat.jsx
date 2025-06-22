@@ -21,27 +21,29 @@ function Chat() {
   const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   useEffect(() => {
-    if (!user?._id || !receiverId) return;
+  if (!user?._id || !receiverId) return;
 
-    fetchMessages();
+  fetchMessages();
 
-    socket.emit("join", user._id);
+  socket.emit("join", user._id);
 
-    const handleReceiveMessage = (msg) => {
-      if (
-        (msg.from._id === user._id && msg.to._id === receiverId) ||
-        (msg.from._id === receiverId && msg.to._id === user._id)
-      ) {
-        setMessages((prev) => [...prev, msg]);
-      }
-    };
+  const handleReceiveMessage = (msg) => {
+    const getId = (val) => (typeof val === "object" ? val._id : val);
 
-    socket.on("receiveMessage", handleReceiveMessage);
+    if (
+      (getId(msg.from) === user._id && getId(msg.to) === receiverId) ||
+      (getId(msg.from) === receiverId && getId(msg.to) === user._id)
+    ) {
+      setMessages((prev) => [...prev, msg]);
+    }
+  };
 
-    return () => {
-      socket.off("receiveMessage", handleReceiveMessage);
-    };
-  }, [receiverId, user?._id]);
+  socket.on("receiveMessage", handleReceiveMessage);
+
+  return () => {
+    socket.off("receiveMessage", handleReceiveMessage);
+  };
+}, [receiverId, user?._id]);
 
   const fetchMessages = async () => {
     try {
