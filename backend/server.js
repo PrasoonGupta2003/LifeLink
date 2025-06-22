@@ -26,7 +26,7 @@ const userSocketMap = {}; // userId => Set(socketIds)
 io.on("connection", (socket) => {
   console.log("🔌 Socket connected:", socket.id);
 
-  // When a user joins with their ID
+  // Join socket to user
   socket.on("join", (userId) => {
     if (!userSocketMap[userId]) {
       userSocketMap[userId] = new Set();
@@ -35,30 +35,28 @@ io.on("connection", (socket) => {
     console.log(`👤 User ${userId} joined with socket ${socket.id}`);
   });
 
-  // Send message from one user to another
+  // Helper function to emit to all sockets of a user
+  const emitToUser = (userId, message) => {
+    const socketSet = userSocketMap[userId];
+    if (socketSet) {
+      socketSet.forEach((socketId) => {
+        io.to(socketId).emit("newMessage", message);
+      });
+    }
+  };
+
+  // When message is sent
   socket.on("sendMessage", (message) => {
-    const receiverSockets = userSocketMap[message.to];
-    const senderSockets = userSocketMap[message.from];
-
-    if (receiverSockets) {
-      receiverSockets.forEach((sockId) => {
-        io.to(sockId).emit("newMessage", message);
-      });
-    }
-
-    if (senderSockets) {
-      senderSockets.forEach((sockId) => {
-        io.to(sockId).emit("newMessage", message);
-      });
-    }
+    emitToUser(message.to._id || message.to, message);
+    emitToUser(message.from._id || message.from, message);
   });
 
-  // Cleanup on disconnect
+  // On disconnect cleanup
   socket.on("disconnect", () => {
     console.log("❌ Socket disconnected:", socket.id);
-    for (const [userId, sockets] of Object.entries(userSocketMap)) {
-      sockets.delete(socket.id);
-      if (sockets.size === 0) {
+    for (const [userId, socketSet] of Object.entries(userSocketMap)) {
+      socketSet.delete(socket.id);
+      if (socketSet.size === 0) {
         delete userSocketMap[userId];
       }
     }
@@ -95,5 +93,4 @@ mongoose
   .catch((err) => {
     console.error("❌ DB connection error:", err);
   });
-
 
