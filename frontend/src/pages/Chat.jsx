@@ -121,17 +121,20 @@ function Chat() {
 
       <div className="flex-1 overflow-y-auto space-y-2 px-1 sm:px-2 mb-3">
         {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`max-w-[80%] sm:max-w-[70%] p-2 rounded-xl text-sm break-words ${
-              msg.from === user._id
-                ? "bg-indigo-100 self-end text-right"
-                : "bg-gray-200 self-start"
-            }`}
-          >
-            {msg.content}
+        <div
+          key={idx}
+          className={`max-w-[80%] sm:max-w-[70%] p-2 rounded-xl text-sm break-words ${
+            msg.from === user._id
+              ? "bg-indigo-100 self-end text-right"
+              : "bg-gray-200 self-start"
+          }`}
+        >
+          <div>{msg.content}</div>
+          <div className="text-[10px] text-gray-500 mt-1">
+            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </div>
-        ))}
+        </div>
+      ))}
         <div ref={bottomRef}></div>
       </div>
 
