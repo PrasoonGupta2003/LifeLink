@@ -31,16 +31,16 @@ export const getAllRequests = async (req, res) => {
 // ✅ Get my own requests
 export const getMyRequests = async (req, res) => {
   try {
-    const requests = await Request.find({ createdBy: req.userId })
-      .populate("matchedWith", "userName email") // 🧠 Add this
-      .sort({ createdAt: -1 });
+    const requests = await Request.find({ createdBy: req.user._id })
+      .populate("matchedTo", "userName _id"); // ✅ FIXED field name here
 
-    res.json(requests);
+    res.status(200).json(requests);
   } catch (err) {
-    console.error("Get My Requests Error:", err);
-    res.status(500).json({ msg: "Failed to get requests" });
+    console.error("❌ Failed to get my requests:", err);
+    res.status(500).json({ msg: "Server Error: Could not fetch your requests" });
   }
 };
+
 
 
 // ✅ Match a user to a request
