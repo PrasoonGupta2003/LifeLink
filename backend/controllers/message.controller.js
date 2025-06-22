@@ -1,6 +1,7 @@
 import Message from "../models/message.model.js";
 
-// 📤 Send a message
+import Message from "../models/message.model.js";
+
 export const sendMessage = async (req, res) => {
   try {
     const { to, content } = req.body;
@@ -11,13 +12,8 @@ export const sendMessage = async (req, res) => {
       content,
     });
 
-    const fullMessage = await message
-      .populate("from", "userName _id")
-      .populate("to", "userName _id")
-      .execPopulate?.(); // For Mongoose < 6
-
-    // Mongoose v6+ auto-populates, so fallback to this if needed
-    const populated = fullMessage || await Message.findById(message._id)
+    // ✅ Mongoose 6+ handles populate like this:
+    const populated = await Message.findById(message._id)
       .populate("from", "userName _id")
       .populate("to", "userName _id");
 
