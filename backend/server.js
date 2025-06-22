@@ -13,7 +13,7 @@ const server = http.createServer(app); // For socket.io
 
 const io = new Server(server, {
   cors: {
-    origin: "*", // Change to your frontend URL in production
+    origin: "https://lifelink-1-kip8.onrender.com", // Change to your frontend URL in production
     methods: ["GET", "POST", "PUT"],
   },
 });
