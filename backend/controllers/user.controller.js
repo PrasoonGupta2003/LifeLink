@@ -8,7 +8,33 @@ export const getLeaderboard = async (req, res) => {
       .limit(20)
       .select("userName karma");
 
-    res.json(users);
+    const withBadges = users.map((user) => {
+      const karma = user.karma || 0;
+
+      let badge = {
+        label: "🌱 Newbie",
+        color: "gray",
+      };
+
+      if (karma >= 1000) {
+        badge = { label: "🏆 Legend", color: "yellow" };
+      } else if (karma >= 500) {
+        badge = { label: "🔥 Hero", color: "orange" };
+      } else if (karma >= 250) {
+        badge = { label: "💎 Pro", color: "purple" };
+      } else if (karma >= 100) {
+        badge = { label: "⭐ Contributor", color: "blue" };
+      }
+
+      return {
+        _id: user._id,
+        userName: user.userName,
+        karma: user.karma,
+        badge, // 🟡 Includes label & color
+      };
+    });
+
+    res.json(withBadges);
   } catch (err) {
     console.error("Leaderboard Error:", err);
     res.status(500).json({ msg: "Failed to fetch leaderboard" });
