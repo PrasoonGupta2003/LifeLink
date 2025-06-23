@@ -1,9 +1,38 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
+import { setUser } from "../redux/userSlice"; // Make sure this exists
 
 function Dashboard() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLatestUser = async () => {
+      try {
+        const token = user?.token;
+        if (!token) return;
+
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Update Redux state
+        dispatch(setUser({ ...res.data, token }));
+      } catch (err) {
+        Swal.fire("Error", "Failed to sync user profile", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestUser();
+  }, [dispatch, user?.token]);
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
@@ -26,45 +55,22 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Link
-          to="/create-request"
-          className="bg-indigo-600 text-white p-5 rounded-xl text-center hover:bg-indigo-700 transition shadow-sm"
-        >
+        <Link to="/create-request" className="bg-indigo-600 text-white p-5 rounded-xl text-center hover:bg-indigo-700 transition shadow-sm">
           ✍️ Create New Request
         </Link>
-
-        <Link
-          to="/my-requests"
-          className="bg-yellow-400 text-white p-5 rounded-xl text-center hover:bg-yellow-500 transition shadow-sm"
-        >
+        <Link to="/my-requests" className="bg-yellow-400 text-white p-5 rounded-xl text-center hover:bg-yellow-500 transition shadow-sm">
           📜 My Requests
         </Link>
-
-        <Link
-          to="/my-matches"
-          className="bg-green-500 text-white p-5 rounded-xl text-center hover:bg-green-600 transition shadow-sm"
-        >
+        <Link to="/my-matches" className="bg-green-500 text-white p-5 rounded-xl text-center hover:bg-green-600 transition shadow-sm">
           🤝 My Matches
         </Link>
-
-        <Link
-          to="/explore"
-          className="bg-blue-500 text-white p-5 rounded-xl text-center hover:bg-blue-600 transition shadow-sm"
-        >
+        <Link to="/explore" className="bg-blue-500 text-white p-5 rounded-xl text-center hover:bg-blue-600 transition shadow-sm">
           🔍 Explore Help Requests
         </Link>
-
-        <Link
-          to="/leaderboard"
-          className="bg-purple-500 text-white p-5 rounded-xl text-center hover:bg-purple-600 transition shadow-sm"
-        >
+        <Link to="/leaderboard" className="bg-purple-500 text-white p-5 rounded-xl text-center hover:bg-purple-600 transition shadow-sm">
           🏆 View Leaderboard
         </Link>
-
-        <Link
-          to="/profile"
-          className="bg-gray-700 text-white p-5 rounded-xl text-center hover:bg-gray-800 transition shadow-sm"
-        >
+        <Link to="/profile" className="bg-gray-700 text-white p-5 rounded-xl text-center hover:bg-gray-800 transition shadow-sm">
           👤 My Profile
         </Link>
       </div>
@@ -78,3 +84,4 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
