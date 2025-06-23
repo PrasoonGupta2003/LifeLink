@@ -99,6 +99,44 @@ function MyRequests() {
     }
   };
 
+  const handleMarkCompleted = async (id) => {
+    const confirm = await Swal.fire({
+      title: "Mark as Completed?",
+      text: "This will finalize the help and award karma to the helper.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, complete it",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#198754",
+      cancelButtonColor: "#6c757d",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const token = JSON.parse(localStorage.getItem("user")).token;
+      const res = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/requests/complete/${id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setRequests((prev) =>
+        prev.map((req) =>
+          req._id === id ? { ...req, status: "completed" } : req
+        )
+      );
+
+      Swal.fire("🎉 Success!", res.data.msg || "Request completed!", "success");
+    } catch (err) {
+      Swal.fire("Error", err.response?.data?.msg || "Failed to complete request", "error");
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-indigo-700 text-center sm:text-left">
@@ -150,7 +188,7 @@ function MyRequests() {
                           ? "text-yellow-600"
                           : req.status === "cancelled"
                           ? "text-red-600"
-                          : "text-gray-600"
+                          : "text-blue-600"
                       }`}
                     >
                       {req.status}
@@ -174,16 +212,30 @@ function MyRequests() {
                 )}
 
                 {req.status === "matched" && req.matchedTo && (
-                <button
-                  onClick={() =>
-                    window.location.href = `/chat/${req.matchedTo._id}`
-                  }
-                  className="mt-2 px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
-                >
-                  💬 Chat with {req.matchedTo.userName}
-                </button>
-              )}
+                  <>
+                    <button
+                      onClick={() =>
+                        window.location.href = `/chat/${req.matchedTo._id}`
+                      }
+                      className="mt-2 px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                    >
+                      💬 Chat with {req.matchedTo.userName}
+                    </button>
 
+                    <button
+                      onClick={() => handleMarkCompleted(req._id)}
+                      className="mt-2 px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                    >
+                      ✅ Mark as Completed
+                    </button>
+                  </>
+                )}
+
+                {req.status === "completed" && (
+                  <div className="mt-2 text-green-600 font-medium text-sm">
+                    🎉 Request Completed
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -194,3 +246,4 @@ function MyRequests() {
 }
 
 export default MyRequests;
+
