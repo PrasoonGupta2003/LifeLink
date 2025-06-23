@@ -32,6 +32,29 @@ function Leaderboard() {
     if (token) fetchLeaderboard();
   }, [token]);
 
+  const getRankEmoji = (rank) => {
+    if (rank === 0) return "🥇";
+    if (rank === 1) return "🥈";
+    if (rank === 2) return "🥉";
+    return `#${rank + 1}`;
+  };
+
+  const getColorClass = (color) => {
+    switch (color) {
+      case "yellow":
+        return "text-yellow-500";
+      case "orange":
+        return "text-orange-500";
+      case "purple":
+        return "text-purple-600";
+      case "blue":
+        return "text-blue-500";
+      case "gray":
+      default:
+        return "text-gray-500";
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-indigo-700 text-center sm:text-left">
@@ -51,9 +74,10 @@ function Leaderboard() {
           <table className="w-full table-auto min-w-[350px]">
             <thead className="bg-indigo-600 text-white">
               <tr>
-                <th className="py-2 px-4 text-left">#</th>
+                <th className="py-2 px-4 text-left">Rank</th>
                 <th className="py-2 px-4 text-left">User</th>
                 <th className="py-2 px-4 text-left">Karma</th>
+                <th className="py-2 px-4 text-left">Badge</th>
               </tr>
             </thead>
             <tbody>
@@ -62,12 +86,11 @@ function Leaderboard() {
                   key={u._id}
                   className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
                 >
-                  <td className="py-2 px-4">{idx + 1}</td>
-                  <td className="py-2 px-4 font-medium break-words">
-                    {u.userName}
-                  </td>
-                  <td className="py-2 px-4 text-green-600 font-semibold">
-                    {u.karma}
+                  <td className="py-2 px-4 font-semibold">{getRankEmoji(idx)}</td>
+                  <td className="py-2 px-4 font-medium break-words">{u.userName}</td>
+                  <td className="py-2 px-4 text-green-600 font-semibold">{u.karma}</td>
+                  <td className={`py-2 px-4 font-semibold ${getColorClass(u.badge?.color)}`}>
+                    {u.badge?.label || "🌱 Newbie"}
                   </td>
                 </tr>
               ))}
@@ -80,3 +103,4 @@ function Leaderboard() {
 }
 
 export default Leaderboard;
+
