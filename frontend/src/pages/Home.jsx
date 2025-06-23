@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function Home() {
+  const { user } = useSelector((state) => state.user);
+
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-6 py-16 bg-gradient-to-br from-indigo-100 via-white to-pink-100">
       <div className="max-w-4xl w-full text-center space-y-6 bg-white/60 backdrop-blur-md p-8 rounded-2xl shadow-xl">
@@ -23,7 +26,7 @@ function Home() {
             🚀 Join the Network
           </Link>
           <Link
-            to="/explore"
+            to={user ? "/explore" : "/signup"}
             className="border-2 border-indigo-600 text-indigo-600 px-6 py-3 rounded-xl hover:bg-indigo-50 transition text-lg font-medium"
           >
             🔍 Explore Requests
@@ -35,3 +38,4 @@ function Home() {
 }
 
 export default Home;
+
