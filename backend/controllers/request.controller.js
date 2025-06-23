@@ -74,21 +74,29 @@ export const completeRequest = async (req, res) => {
     const request = await Request.findById(req.params.id);
     if (!request) return res.status(404).json({ msg: "Request not found" });
 
-    if (String(request.matchedTo) !== String(req.user._id)) {
-      return res.status(403).json({ msg: "Not authorized to complete" });
+    // ✅ Only the requester can mark it completed
+    if (String(request.createdBy) !== String(req.user._id)) {
+      return res.status(403).json({ msg: "Only request owner can mark complete" });
+    }
+
+    // Check if it was matched and not already completed/cancelled
+    if (request.status !== "matched") {
+      return res.status(400).json({ msg: "Only matched requests can be completed" });
     }
 
     request.status = "completed";
     await request.save();
 
-    // 🎁 Add karma to user
-    await User.findByIdAndUpdate(req.user._id, { $inc: { karma: 10 } });
+    // 🎁 Award karma to the helper
+    await User.findByIdAndUpdate(request.matchedTo, { $inc: { karma: 10 } });
 
-    res.json({ msg: "Request marked as completed. You earned 10 karma!" });
+    res.json({ msg: "Request marked as completed. Helper earned 10 karma!" });
   } catch (err) {
+    console.error("Complete request error:", err);
     res.status(500).json({ msg: "Failed to complete request" });
   }
 };
+
 
 // ✅ Get all requests user matched to
 export const getMyMatches = async (req, res) => {
